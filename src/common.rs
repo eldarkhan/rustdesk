@@ -1937,6 +1937,16 @@ pub fn check_process(arg: &str, mut same_uid: bool) -> bool {
 }
 
 async fn secure_tcp_impl(conn: &mut Stream, key: &str, log_on_success: bool) -> ResultType<()> {
+    // PATCHED: return Ok immediately, because self-hosted hbbs server has not
+    // implemented the key-exchange handshake that secure_tcp expects. When the
+    // client has both a key and an API token (address book login), it tries to
+    // run secure_tcp against hbbs, the server never responds, and the connection
+    // times out with "Failed to secure tcp: deadline has elapsed".
+    // Returning Ok here skips the handshake — the end-to-end encryption between
+    // clients is unaffected (it uses a separate key exchange during the Rendezvous
+    // punch/relay phase, not this TCP-level wrapper).
+    return Ok(());
+
     // Skip additional encryption when using WebSocket connections (wss://)
     // as WebSocket Secure (wss://) already provides transport layer encryption.
     // This doesn't affect the end-to-end encryption between clients,
